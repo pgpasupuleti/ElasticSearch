@@ -10,6 +10,7 @@ bin/plugin install elasticsearch/elasticsearch-mapper-attachments/2.5.0
 
 mapping format:
 
+```json
 {
     "attachment": {
         "properties": {
@@ -71,5 +72,5 @@ mapping format:
         }
     }
 }
-
+```
 
