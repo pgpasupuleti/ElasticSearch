@@ -12,7 +12,7 @@ bin/plugin install elasticsearch/elasticsearch-mapper-attachments/2.5.0
 
 Once this plugin installed, start the elastic search server.  
 
-mapping format:
+### Mapping Format:
 
 ```json
 {
