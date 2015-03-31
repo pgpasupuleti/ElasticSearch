@@ -3,9 +3,12 @@ package com.researchengine.search.es;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
-import javax.json.JsonArray;
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -26,6 +29,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
+import com.researchengine.search.beans.Document;
 import com.researchengine.search.exception.ESException;
 
 
@@ -78,11 +82,11 @@ public class EISClient {
 			
 			//Attach Base 64 content to the index 
 			XContentBuilder sourceBuilder = jsonBuilder().startObject()
-					.field("file", base64Content)
-					.field("title",name)
-					.field("date", Calendar.getInstance().getTime())
-					.field("content_type", contentType)
-					.field("metadata",createAttachmentMapper().string())
+					.field(ESIndexFields.FILE.getFieldName(), base64Content)
+					.field(ESIndexFields.TITLE.getFieldName(),name)
+					.field(ESIndexFields.DATE.getFieldName(), Calendar.getInstance().getTime())
+					.field(ESIndexFields.CONTENT_TYPE.getFieldName(), contentType)
+					.field(ESIndexFields.METADATA.getFieldName(),createAttachmentMapper().string())
 					.endObject();
 			
 			IndexResponse indexResponse = client.prepareIndex().setIndex(index).setType(sourceType).setSource(sourceBuilder).setRefresh(true).execute().actionGet();
@@ -130,9 +134,9 @@ public class EISClient {
 	 * @return
 	 * @throws ESException
 	 */
-	public JsonArray search(String searchQuery, String index, String sourceType) throws ESException {
-
+	public List<Document> search(String searchQuery, String index, String sourceType) throws ESException {
 		try {
+			List<Document> documents = null;
 			QueryBuilder query = QueryBuilders.queryString(searchQuery);
 			SearchRequestBuilder searchBuilder = client.prepareSearch(index);
 
@@ -140,15 +144,21 @@ public class EISClient {
 				searchBuilder.setTypes(sourceType);
 			}
 			searchBuilder.setQuery(query);
-			searchBuilder.addFields("title", "date", "metadata", "content_type", "attachment");
+			searchBuilder.addFields(ESIndexFields.TITLE.getFieldName(),
+					ESIndexFields.DATE.getFieldName(),
+					ESIndexFields.METADATA.getFieldName(),
+					ESIndexFields.CONTENT_TYPE.getFieldName(),
+					ESIndexFields.ATTACHMENT.getFieldName());
+			
 			System.out.println("Search Query Builder:"+ searchBuilder.toString());
 
 			SearchResponse searchResponse = searchBuilder.execute().actionGet();
 			System.out.println("search Results:"+ searchResponse.toString());
-			
 			SearchHit[] searchHits = searchResponse.getHits().getHits();
+			documents = new ArrayList<Document>(searchHits.length);
+			
 			for (SearchHit searchHit : searchHits) {
-				Document document = getDocument(index,sourceType,searchHit.getId());
+				documents.add(getDocument(index,sourceType,searchHit.getId()));
 			}
 		}  catch(IOException e) {
 			e.printStackTrace();
@@ -295,112 +305,6 @@ public class EISClient {
 		return document;
 	}
 	
-	class Document {
-		String id = null;
-		String index = null;
-		String type = null;
-		String title = null;
-		String contentType = null;
-		String content = null;
-		String date = null;
-		String metaData = null;
-		/**
-		 * @return the id
-		 */
-		public String getId() {
-			return id;
-		}
-		/**
-		 * @param id the id to set
-		 */
-		public void setId(String id) {
-			this.id = id;
-		}
-		/**
-		 * @return the index
-		 */
-		public String getIndex() {
-			return index;
-		}
-		/**
-		 * @param index the index to set
-		 */
-		public void setIndex(String index) {
-			this.index = index;
-		}
-		/**
-		 * @return the type
-		 */
-		public String getType() {
-			return type;
-		}
-		/**
-		 * @param type the type to set
-		 */
-		public void setType(String type) {
-			this.type = type;
-		}
-		/**
-		 * @return the title
-		 */
-		public String getTitle() {
-			return title;
-		}
-		/**
-		 * @param title the title to set
-		 */
-		public void setTitle(String title) {
-			this.title = title;
-		}
-		/**
-		 * @return the contentType
-		 */
-		public String getContentType() {
-			return contentType;
-		}
-		/**
-		 * @param contentType the contentType to set
-		 */
-		public void setContentType(String contentType) {
-			this.contentType = contentType;
-		}
-		/**
-		 * @return the content
-		 */
-		public String getContent() {
-			return content;
-		}
-		/**
-		 * @param content the content to set
-		 */
-		public void setContent(String content) {
-			this.content = content;
-		}
-		/**
-		 * @return the date
-		 */
-		public String getDate() {
-			return date;
-		}
-		/**
-		 * @param date the date to set
-		 */
-		public void setDate(String date) {
-			this.date = date;
-		}
-		/**
-		 * @return the metaData
-		 */
-		public String getMetaData() {
-			return metaData;
-		}
-		/**
-		 * @param metaData the metaData to set
-		 */
-		public void setMetaData(String metaData) {
-			this.metaData = metaData;
-		}
-	}
 	
 	public static void main(String[] args) {
 		try {
