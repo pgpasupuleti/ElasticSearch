@@ -1,12 +1,16 @@
 # ElasticSearch
 Elastic Search Basic Setup
 
+
 ### mapper-attachments
 refer https://github.com/elastic/elasticsearch-mapper-attachments
 
 install elasticsearch-mapper-attachments plugin to elastic search using following command
 
 bin/plugin install elasticsearch/elasticsearch-mapper-attachments/2.5.0
+
+
+Once this plugin installed, start the elastic search server.  
 
 mapping format:
 
